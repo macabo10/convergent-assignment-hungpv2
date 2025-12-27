@@ -21,7 +21,7 @@ export interface Scenario {
 export interface Message {
   id: string;
   simulation_id: string;
-  sender_type: 'user' | 'persona';
+  sender_type: 'user' | 'persona' | 'hint';
   content: string;
   created_at: string;
 }

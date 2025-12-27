@@ -13,6 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Persona, Scenario } from "@/types";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const traits: { label: string; key: keyof Persona }[] = [
   { label: "Openness", key: "o_score" },
@@ -151,6 +153,16 @@ const MessageItem = ({ isUser, content }: { isUser: boolean, content: string }) 
   )
 }
 
+const HintItem = ({ content }: { content: string }) => {
+  return (
+    <div className="flex justify-center mb-4">
+      <div className="bg-yellow-100 text-yellow-800 text-sm px-4 py-2 rounded-full border border-yellow-300 shadow-sm">
+        💡 {content}
+      </div>
+    </div>
+  )
+}
+
 const InputArea = ({
   inputValue,
   setInputValue,
@@ -224,6 +236,7 @@ export default function ChatPage() {
   const channelRef = useRef<any>(null);
   const [inputValue, setInputValue] = useState("");
   const [scenario, setScenario] = useState<Scenario | null>(null);
+  const [showHints, setShowHints] = useState(true);
 
   useEffect(() => {
     if (!conversationId) {
@@ -373,8 +386,10 @@ export default function ChatPage() {
     }
   };
 
-  const lastMessage = messages[messages.length - 1];
-  const isWaitingForAI = lastMessage?.sender_type === "user";
+  const lastRealMessage = [...messages]
+    .reverse()
+    .find(m => m.sender_type !== 'hint');
+  const isWaitingForAI = lastRealMessage?.sender_type === "user";
 
   return (
     <Suspense fallback={<div>Loading Chat...</div>}>
@@ -387,17 +402,42 @@ export default function ChatPage() {
           onUpdatePersona={handleUpdatePersona}
         />
 
+        <div className="flex items-center justify-end px-6 py-2 bg-muted/20 gap-3">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="live-feedback"
+              checked={showHints}
+              onCheckedChange={setShowHints}
+            />
+            <Label htmlFor="live-feedback" className="text-xs font-bold uppercase text-muted-foreground cursor-pointer">
+              Live Feedback
+            </Label>
+          </div>
+        </div>
+
         {/* Messages */}
         <ScrollArea className="flex-1 w-full overflow-y-auto">
           <div className="max-w-4xl mx-auto py-10 px-4 space-y-8">
-            {displayMessages.map((msg, index) => {
-              const isUser = msg.sender_type === "user";
-              return <MessageItem
-                key={msg.id}
-                isUser={isUser}
-                content={msg.content}
-              />;
-            })}
+            {displayMessages
+              .filter(msg => showHints || msg.sender_type !== 'hint')
+              .map((msg) => {
+                if (msg.sender_type === 'hint') {
+                  return (
+                    <HintItem
+                      key={msg.id}
+                      content={msg.content}
+                    />
+                  );
+                }
+                const isUser = msg.sender_type === "user";
+                return (
+                  <MessageItem
+                    key={msg.id}
+                    isUser={isUser}
+                    content={msg.content}
+                  />
+                );
+              })}
           </div>
         </ScrollArea>
 
