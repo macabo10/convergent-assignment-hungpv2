@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { Send, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -154,12 +154,15 @@ const MessageItem = ({ isUser, content }: { isUser: boolean, content: string }) 
 const InputArea = ({
   inputValue,
   setInputValue,
-  onSend
+  onSend,
+  isWaitingForAI
 }: {
   inputValue: string,
   setInputValue: React.Dispatch<React.SetStateAction<string>>,
-  onSend: (content: string) => void
+  onSend: (content: string) => void,
+  isWaitingForAI: boolean
 }) => {
+  console.log("isWaitingForAI:", isWaitingForAI);
   return (
     <div className="w-full shrink-0 bg-background pb-10 px-4">
       <div className="max-w-4xl mx-auto">
@@ -175,7 +178,7 @@ const InputArea = ({
               className="flex-1 bg-transparent border-none focus:ring-0 px-4 py-3 text-base outline-none 
                 resize-none overflow-y-auto"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey && !isWaitingForAI && inputValue.trim()) {
                   e.preventDefault();
                   onSend(inputValue);
                   setInputValue("");
@@ -190,7 +193,7 @@ const InputArea = ({
                   "rounded-full transition-colors",
                   inputValue ? "text-gemini-blue hover:bg-gemini-blue/10" : "text-muted-foreground opacity-50"
                 )}
-                disabled={!inputValue}
+                disabled={inputValue.length === 0 || isWaitingForAI}
                 onClick={() => {
                   onSend(inputValue);
                   setInputValue("");
@@ -214,6 +217,7 @@ export default function ChatPage() {
   const [persona, setPersona] = useState<Persona | null>(null);
   const supabase = createClient();
   const router = useRouter();
+  const channelRef = useRef<any>(null);
   const [inputValue, setInputValue] = useState("");
   const [scenario, setScenario] = useState<Scenario | null>(null);
 
@@ -249,6 +253,11 @@ export default function ChatPage() {
   useEffect(() => {
     if (!conversationId) return;
 
+    // Cleanup existing channel
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
     const channel = supabase
       .channel(`messages:${conversationId}`)
       .on(
@@ -262,15 +271,19 @@ export default function ChatPage() {
         (payload) => {
           const newMsg = payload.new as Message;
           setMessages((prev) => {
-            if (prev.find((m) => m.id === newMsg.id)) return prev;
+            if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
         }
       )
       .subscribe();
 
+    channelRef.current = channel;
+
     return () => {
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
     };
   }, [conversationId, supabase]);
 
@@ -294,10 +307,10 @@ export default function ChatPage() {
   const displayMessages = conversationId ? messages : [];
 
   const handleSendMessage = async (content: string) => {
+    console.log("Sending message:", content);
     if (!content.trim() || !user) return;
 
     let targetId = conversationId;
-
     try {
       if (!targetId) {
         const { data: randomPersona, error: pError } = await supabase
@@ -356,6 +369,9 @@ export default function ChatPage() {
     }
   };
 
+  const lastMessage = messages[messages.length - 1];
+  const isWaitingForAI = lastMessage?.sender_type === "user";
+
   return (
     <Suspense fallback={<div>Loading Chat...</div>}>
       <div className="flex flex-col h-screen bg-background overflow-hidden">
@@ -373,7 +389,7 @@ export default function ChatPage() {
             {displayMessages.map((msg, index) => {
               const isUser = msg.sender_type === "user";
               return <MessageItem
-                key={index}
+                key={msg.id}
                 isUser={isUser}
                 content={msg.content}
               />;
@@ -381,7 +397,7 @@ export default function ChatPage() {
           </div>
         </ScrollArea>
 
-        <InputArea inputValue={inputValue} setInputValue={setInputValue} onSend={handleSendMessage} />
+        <InputArea inputValue={inputValue} setInputValue={setInputValue} onSend={handleSendMessage} isWaitingForAI={isWaitingForAI} />
       </div>
     </Suspense>
   );
