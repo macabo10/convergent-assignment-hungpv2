@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Plus, MessageSquare, Menu, UserCog, TrashIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
-import { useRouter, useSearchParams } from "next/navigation"; // Dùng useSearchParams thay cho context
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 
 interface ConversationHistoryItem {

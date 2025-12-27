@@ -126,7 +126,7 @@ export default function AccountSettings() {
                 </Link>
 
                 {/* Profile Card */}
-                <Card className="border-none shadow-sm rounded-[24px] bg-sidebar">
+                {/* <Card className="border-none shadow-sm rounded-[24px] bg-sidebar">
                     <CardHeader><CardTitle>Profile Information</CardTitle></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
@@ -142,7 +142,7 @@ export default function AccountSettings() {
                             Save Changes
                         </Button>
                     </CardContent>
-                </Card>
+                </Card> */}
 
                 {/* Security Card */}
                 <Card className="border-none shadow-sm rounded-[24px] bg-sidebar">

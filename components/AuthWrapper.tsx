@@ -11,12 +11,14 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
     const pathname = usePathname();
 
     const isPublicRoute =
-        pathname === "/auth/login" ||
-        pathname === "/auth/register" ||
-        pathname === "/auth/forgot-password";
+        pathname.startsWith("/auth/login") ||
+        pathname.startsWith("/auth/register") ||
+        pathname.startsWith("/auth/forget-password") ||
+        pathname.startsWith("/auth/callback");;
 
     useEffect(() => {
         if (!loading && !user && !isPublicRoute) {
+            console.log("User not authenticated, redirecting to login.");
             router.push("/auth/login");
         }
 
