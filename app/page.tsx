@@ -179,6 +179,9 @@ const InputArea = ({
               className="flex-1 bg-transparent border-none focus:ring-0 px-4 py-3 text-base outline-none 
                 resize-none overflow-y-auto"
               onKeyDown={(e) => {
+                if (e.nativeEvent.isComposing) {
+                  return;
+                }
                 if (e.key === "Enter" && !e.shiftKey && !isWaitingForAI && inputValue.trim()) {
                   e.preventDefault();
                   onSend(inputValue);
