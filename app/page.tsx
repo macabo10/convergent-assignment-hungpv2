@@ -173,8 +173,9 @@ const InputArea = ({
               minRows={1}
               maxRows={3}
               value={inputValue}
+              disabled={isWaitingForAI}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask agent..."
+              placeholder={isWaitingForAI ? "AI is thinking..." : "Ask agent..."}
               className="flex-1 bg-transparent border-none focus:ring-0 px-4 py-3 text-base outline-none 
                 resize-none overflow-y-auto"
               onKeyDown={(e) => {
@@ -193,7 +194,7 @@ const InputArea = ({
                   "rounded-full transition-colors",
                   inputValue ? "text-gemini-blue hover:bg-gemini-blue/10" : "text-muted-foreground opacity-50"
                 )}
-                disabled={inputValue.length === 0 || isWaitingForAI}
+                disabled={!inputValue.trim() || isWaitingForAI}
                 onClick={() => {
                   onSend(inputValue);
                   setInputValue("");
