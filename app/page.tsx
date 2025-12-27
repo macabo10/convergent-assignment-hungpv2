@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { Send, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -358,30 +358,32 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
+    <Suspense fallback={<div>Loading Chat...</div>}>
+      <div className="flex flex-col h-screen bg-background overflow-hidden">
 
-      <Header
-        key={persona?.id || 'new'}
-        title={persona?.name || "New Conversation"}
-        personaData={persona}
-        onUpdatePersona={handleUpdatePersona}
-      />
+        <Header
+          key={persona?.id || 'new'}
+          title={persona?.name || "New Conversation"}
+          personaData={persona}
+          onUpdatePersona={handleUpdatePersona}
+        />
 
-      {/* Messages */}
-      <ScrollArea className="flex-1 w-full overflow-y-auto">
-        <div className="max-w-4xl mx-auto py-10 px-4 space-y-8">
-          {displayMessages.map((msg, index) => {
-            const isUser = msg.sender_type === "user";
-            return <MessageItem
-              key={index}
-              isUser={isUser}
-              content={msg.content}
-            />;
-          })}
-        </div>
-      </ScrollArea>
+        {/* Messages */}
+        <ScrollArea className="flex-1 w-full overflow-y-auto">
+          <div className="max-w-4xl mx-auto py-10 px-4 space-y-8">
+            {displayMessages.map((msg, index) => {
+              const isUser = msg.sender_type === "user";
+              return <MessageItem
+                key={index}
+                isUser={isUser}
+                content={msg.content}
+              />;
+            })}
+          </div>
+        </ScrollArea>
 
-      <InputArea inputValue={inputValue} setInputValue={setInputValue} onSend={handleSendMessage} />
-    </div>
+        <InputArea inputValue={inputValue} setInputValue={setInputValue} onSend={handleSendMessage} />
+      </div>
+    </Suspense>
   );
 }
