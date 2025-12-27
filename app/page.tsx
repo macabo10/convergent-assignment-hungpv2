@@ -12,7 +12,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
-import { Persona } from "@/types";
+import { Persona, Scenario } from "@/types";
 
 const traits: { label: string; key: keyof Persona }[] = [
   { label: "Openness", key: "o_score" },
@@ -31,7 +31,7 @@ const Header = ({
   personaData: Persona | null,
   onUpdatePersona: (data: Persona) => Promise<boolean>
 }) => {
-  const [localPersona, setLocalPersona] = useState<Persona>(() => personaData || {
+  const defaultPersona: Persona = {
     name: "",
     role: "Mentor",
     tone: "Professional",
@@ -40,8 +40,9 @@ const Header = ({
     e_score: 50,
     a_score: 50,
     n_score: 50
-  } as Persona);
+  } as Persona;
 
+  const [localPersona, setLocalPersona] = useState<Persona>(personaData || defaultPersona);
   const [open, setOpen] = useState(false);
 
   const handleUpdate = async () => {
@@ -214,10 +215,12 @@ export default function ChatPage() {
   const supabase = createClient();
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
+  const [scenario, setScenario] = useState<Scenario | null>(null);
 
   useEffect(() => {
     if (!conversationId) {
       setPersona(null);
+      setScenario(null);
       setMessages([]);
       return;
     }
@@ -225,12 +228,12 @@ export default function ChatPage() {
     const fetchInitialData = async () => {
       const { data: convData } = await supabase
         .from("conversations")
-        .select("*, personas (*)")
+        .select("*, personas (*), scenarios (*)")
         .eq("id", conversationId)
         .single();
 
       if (convData?.personas) setPersona(convData.personas);
-
+      if (convData?.scenarios) setScenario(convData.scenarios);
       const { data: msgs } = await supabase
         .from("messages")
         .select("*")
@@ -297,42 +300,41 @@ export default function ChatPage() {
 
     try {
       if (!targetId) {
-        // Default persona
-        const { data: newP, error: pError } = await supabase
+        const { data: randomPersona, error: pError } = await supabase
           .from("personas")
-          .insert([{
-            name: "AI Trainer",
-            role: "Mentor",
-            tone: "Professional",
-            o_score: 50,
-            c_score: 50,
-            e_score: 50,
-            a_score: 50,
-            n_score: 50
-          }])
-          .select()
-          .single();
+          .select("id")
+          .limit(10);
 
-        if (pError || !newP) {
-          console.error("Error while creating persona:", pError);
-          alert("Cannot create new persona. Please try again.");
+        if (pError || !randomPersona.length) {
+          console.error("Error fetching personas:", pError);
           return;
         }
+        const pickedPersona = randomPersona[Math.floor(Math.random() * randomPersona.length)];
+
+        const { data: randomScenario, error: sError } = await supabase
+          .from("scenarios")
+          .select("id")
+          .limit(10);
+
+        if (sError || !randomScenario.length) {
+          console.error("Error fetching scenarios:", sError);
+          return;
+        }
+        const pickedScenario = randomScenario[Math.floor(Math.random() * randomScenario.length)];
 
         const { data: newConv, error: convError } = await supabase
           .from("conversations")
           .insert({
             user_id: user.id,
-            persona_id: newP.id,
+            persona_id: pickedPersona.id,
+            scenario_id: pickedScenario.id,
             status: "active"
           })
           .select()
           .single();
 
         if (convError || !newConv) {
-          console.error("Error creating conversation:", convError);
-          alert("Cannot create new conversation. Please try again.");
-          return;
+          throw convError;
         }
 
         targetId = newConv.id;
@@ -345,15 +347,12 @@ export default function ChatPage() {
         sender_type: "user",
       });
 
-      if (msgError) {
-        throw msgError;
-      }
-
+      if (msgError) throw msgError;
       setInputValue("");
 
     } catch (error) {
-      console.error("Critical error in handleSendMessage:", error);
-      alert("Message not sent. Please check your connection.");
+      console.error("Critical error:", error);
+      alert("Failed to start simulation.");
     }
   };
 
@@ -362,8 +361,8 @@ export default function ChatPage() {
       <div className="flex flex-col h-screen bg-background overflow-hidden">
 
         <Header
-          key={persona?.id || 'new'}
-          title={persona?.name || "New Conversation"}
+          key={persona?.id}
+          title={conversationId ? persona?.name + ": " + (scenario?.subject || "") : "New Conversation"}
           personaData={persona}
           onUpdatePersona={handleUpdatePersona}
         />
