@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { LogOut, Save, Key, Loader2, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { checkPasswordStrength } from "@/lib/utils";
 
 export default function AccountSettings() {
     const supabase = createClient();
@@ -37,52 +38,14 @@ export default function AccountSettings() {
         getUser();
     }, []);
 
-    const handleUpdateProfile = async () => {
-        setLoading(true);
-        const { error } = await supabase
-            .from("users")
-            .update({ full_name: fullName })
-            .eq("id", user.id);
-
-        if (error) alert(error.message);
-        else alert("Profile updated successfully!");
-        setLoading(false);
-    };
-
     const handleChangePassword = async () => {
         if (!currentPassword || !newPassword || !confirmPassword) {
             alert("Please fill in all password fields.");
             return;
         }
 
-        if (newPassword !== confirmPassword) {
-            alert("New passwords do not match.");
+        if (!checkPasswordStrength(newPassword, confirmPassword)) {
             return;
-        }
-
-        if (newPassword.length < 8) {
-            alert("Password must be at least 8 characters long!");
-            return false;
-        }
-
-        if (!/[A-Z]/.test(newPassword)) {
-            alert("Password must contain at least one uppercase letter!");
-            return false;
-        }
-
-        if (!/[a-z]/.test(newPassword)) {
-            alert("Password must contain at least one lowercase letter!");
-            return false;
-        }
-
-        if (!/[0-9]/.test(newPassword)) {
-            alert("Password must contain at least one number!");
-            return false;
-        }
-
-        if (!/[^A-Za-z0-9]/.test(newPassword)) {
-            alert("Password must contain at least one special character!");
-            return false;
         }
 
         setLoading(true);
@@ -124,25 +87,6 @@ export default function AccountSettings() {
                 <Link href="/" className="flex items-center gap-2 text-gemini-text-secondary hover:text-gemini-blue transition-colors mb-4">
                     <ArrowLeft size={18} /> <span>Back to Chat</span>
                 </Link>
-
-                {/* Profile Card */}
-                {/* <Card className="border-none shadow-sm rounded-[24px] bg-sidebar">
-                    <CardHeader><CardTitle>Profile Information</CardTitle></CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium px-1">Full Name</label>
-                            <Input
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
-                                className="rounded-full bg-input-bg mt-2 px-4 py-4 border border-gray-500 focus-visible:ring-1 focus-visible:ring-gemini-blue focus-visible:border-gemini-blue transition-all"
-                            />
-                        </div>
-                        <Button onClick={handleUpdateProfile} disabled={loading} className="rounded-full bg-gemini-blue">
-                            {loading ? <Loader2 className="animate-spin" /> : <Save size={18} className="mr-2" />}
-                            Save Changes
-                        </Button>
-                    </CardContent>
-                </Card> */}
 
                 {/* Security Card */}
                 <Card className="border-none shadow-sm rounded-[24px] bg-sidebar">

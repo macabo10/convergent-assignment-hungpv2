@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { checkPasswordStrength } from "@/lib/utils";
 
 export default function UpdatePasswordPage() {
     const [newPassword, setNewPassword] = useState("");
@@ -20,34 +21,8 @@ export default function UpdatePasswordPage() {
         e.preventDefault();
         setError("");
 
-        if (newPassword !== confirmPassword) {
-            alert("New passwords do not match.");
+        if (!checkPasswordStrength(newPassword, confirmPassword)) {
             return;
-        }
-
-        if (newPassword.length < 8) {
-            alert("Password must be at least 8 characters long!");
-            return false;
-        }
-
-        if (!/[A-Z]/.test(newPassword)) {
-            alert("Password must contain at least one uppercase letter!");
-            return false;
-        }
-
-        if (!/[a-z]/.test(newPassword)) {
-            alert("Password must contain at least one lowercase letter!");
-            return false;
-        }
-
-        if (!/[0-9]/.test(newPassword)) {
-            alert("Password must contain at least one number!");
-            return false;
-        }
-
-        if (!/[^A-Za-z0-9]/.test(newPassword)) {
-            alert("Password must contain at least one special character!");
-            return false;
         }
 
         setLoading(true);
