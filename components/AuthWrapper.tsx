@@ -14,7 +14,8 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
         pathname.startsWith("/auth/login") ||
         pathname.startsWith("/auth/register") ||
         pathname.startsWith("/auth/forget-password") ||
-        pathname.startsWith("/auth/callback");;
+        pathname.startsWith("/auth/callback") ||
+        pathname.startsWith("/auth/update-password");
 
     useEffect(() => {
         if (!loading && !user && !isPublicRoute) {
@@ -23,9 +24,11 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
         }
 
         if (!loading && user && isPublicRoute) {
-            router.push("/");
+            if (pathname !== "/auth/update-password") {
+                router.push("/");
+            }
         }
-    }, [user, loading, router, isPublicRoute]);
+    }, [user, loading, router, isPublicRoute, pathname]);
 
     if (loading) {
         return (
