@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
 export default function UpdatePasswordPage() {
@@ -13,72 +13,12 @@ export default function UpdatePasswordPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
-    const [sessionReady, setSessionReady] = useState(false);
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
     const router = useRouter();
-    const searchParams = useSearchParams();
-
-    useEffect(() => {
-        let active = true;
-
-        const establishSession = async () => {
-            try {
-                const code = searchParams.get("code");
-                if (code) {
-                    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-                    if (error) throw error;
-                    const { data: sessionData } = await supabase.auth.getSession();
-                    if (sessionData.session && active) setSessionReady(true);
-                    else if (active) setError("Recovery session not found. Please open the reset link from your email again.");
-                    return;
-                }
-
-                const hashString = typeof window !== "undefined" ? window.location.hash.replace(/^#/, "") : "";
-                const hashParams = new URLSearchParams(hashString);
-                const access_token = hashParams.get("access_token");
-                const refresh_token = hashParams.get("refresh_token");
-
-                if (access_token && refresh_token) {
-                    const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-                    if (error) throw error;
-                    const { data: sessionData } = await supabase.auth.getSession();
-                    if (sessionData.session && active) setSessionReady(true);
-                    else if (active) setError("Recovery session not found. Please open the reset link from your email again.");
-                    return;
-                }
-
-                // Fallback: see if a session already exists (e.g., came via callback route).
-                const { data } = await supabase.auth.getSession();
-                if (data.session && active) {
-                    setSessionReady(true);
-                    return;
-                }
-
-                if (active) {
-                    setError("Recovery session not found. Please open the reset link from your email again.");
-                }
-            } catch (_err) {
-                if (active) {
-                    setError("Invalid or expired recovery link. Please request a new one.");
-                }
-            }
-        };
-
-        establishSession();
-
-        return () => {
-            active = false;
-        };
-    }, [searchParams, supabase]);
 
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault();
         setError("");
-
-        if (!sessionReady) {
-            setError("Recovery session missing. Please reopen the reset link from your email.");
-            return;
-        }
 
         if (newPassword !== confirmPassword) {
             alert("New passwords do not match.");

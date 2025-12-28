@@ -17,10 +17,7 @@ export default function ForgotPasswordPage() {
         e.preventDefault();
         setLoading(true);
 
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            // Go straight to the client page so the hash tokens are available to set the session
-            redirectTo: `${window.location.origin}/auth/update-password`,
-        });
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
 
         if (error) {
             alert(error.message);
